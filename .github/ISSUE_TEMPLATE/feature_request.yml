@@ -1,0 +1,16 @@
+name: Feature Request
+description: New idea? Missing some functionality?
+labels:
+- "t:enhancement"
+body:
+- type: markdown
+  attributes:
+    value: |
+      As mentioned in the README, we run an incentive program on Feature Requests. The more ISK is donated towards a feature, the more developers are incentivized to do the work.
+- type: textarea
+  id: feature
+  attributes:
+    label: Feature request
+    description: Explain as detailed as possible what you would like to see added to EVEShip.fit
+  validations:
+    required: true

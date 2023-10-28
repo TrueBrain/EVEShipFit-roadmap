@@ -1,0 +1,40 @@
+name: Bug Report
+description: Found a bug in EVEShip.fit?
+labels:
+- "t:bug"
+body:
+- type: markdown
+  attributes:
+    value: |
+      Thanks for taking the time to fill out this bug report!
+- type: input
+  id: fit
+  attributes:
+    label: URL of the fit
+    description: Share the fit-link and paste it here (when possible)
+    placeholder: https://eveship.fit/#import/...
+- type: textarea
+  id: expected
+  attributes:
+    label: Expected result
+    description: Describe in a few words what you expected to happen.
+  validations:
+    required: true
+- type: textarea
+  id: actual
+  attributes:
+    label: Actual result
+    description: Describe in a few words what actually happens.
+  validations:
+    required: true
+- type: textarea
+  id: reproduce
+  attributes:
+    label: Steps to reproduce
+    description: As detailed as possible, please tell us how we can reproduce this.
+    placeholder: |
+      1. Created a Loki fit
+      2. Added module X
+      3. Statistics isn't showing the expected result
+  validations:
+    required: true
