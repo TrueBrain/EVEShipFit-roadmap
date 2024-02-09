@@ -12,7 +12,7 @@ body:
   attributes:
     label: URL of the fit
     description: Share the fit-link and paste it here (when possible)
-    placeholder: https://eveship.fit/#import/...
+    placeholder: https://eveship.fit/#fit:...
 - type: textarea
   id: expected
   attributes:
