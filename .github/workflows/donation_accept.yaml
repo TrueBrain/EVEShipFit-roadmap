@@ -1,0 +1,47 @@
+name: Donation Accept
+
+on:
+  issues:
+    types:
+    - labeled
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  donation_accept:
+    if: github.event.label.name == 'd:accept'
+
+    name: Donation Accept
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Generate access token
+      id: donation_app
+      uses: tibdex/github-app-token@v2
+      with:
+        app_id: ${{ secrets.DONATION_APP_ID }}
+        private_key: ${{ secrets.DONATION_APP_PRIVATE_KEY }}
+        installation_retrieval_mode: "repository"
+        installation_retrieval_payload: ${{ github.repository }}
+
+    - name: Add comment
+      run: gh issue comment ${NUMBER} --body "${BODY}"
+      env:
+        GH_TOKEN: ${{ steps.donation_app.outputs.token }}
+        GH_REPO: ${{ github.repository }}
+        NUMBER: ${{ github.event.issue.number }}
+        BODY: |
+          🚀 This ticket participates in EVEShip.fit's [incentive program](https://github.com/EVEShipFit/roadmap/?tab=readme-ov-file).
+
+          💲 In-game donations made to the corp [EVEShip.fit](https://evewho.com/corporation/98753333) for any amount above 50m ISK with the description `ip-${{ github.event.issue.number }}` will add towards this ticket.
+          (note: use this exact description to ensure the donation is correctly attributed).
+
+          💰 Whoever implements this ticket, will be granted all the ISK donated (in full; EVEShip.fit does not take any cut) listed below.
+
+          ---
+
+          <!--TOTAL-->Currently, there are no donations made towards this ticket.
+          <!--MARKER-->

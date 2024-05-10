@@ -1,0 +1,99 @@
+name: Donation Made
+
+on:
+  repository_dispatch:
+    types:
+    - donation_made
+  workflow_dispatch:
+    inputs:
+      character_name:
+        description: 'Name of the character making the donation'
+        required: true
+      character_id:
+        description: 'ID of the character making the donation'
+        required: true
+      amount:
+        description: 'Amount of the donation (in ISK)'
+        required: true
+      issue:
+        description: 'Issue number the donation was made to'
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  donation_made:
+    name: Donation Made
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Generate access token
+      id: donation_app
+      uses: tibdex/github-app-token@v2
+      with:
+        app_id: ${{ secrets.DONATION_APP_ID }}
+        private_key: ${{ secrets.DONATION_APP_PRIVATE_KEY }}
+        installation_retrieval_mode: "repository"
+        installation_retrieval_payload: ${{ github.repository }}
+
+    - name: Get issue body
+      id: issue
+      run: |
+        gh issue view ${NUMBER} --json comments --jq '.comments.[] | select(.author.login == "${{ vars.DONATION_APP_LOGIN }}") | .body' > /tmp/issue_body
+        cat /tmp/issue_body
+      env:
+        GH_TOKEN: ${{ steps.donation_app.outputs.token }}
+        GH_REPO: ${{ github.repository }}
+        NUMBER: ${{ inputs.issue }}
+
+    - name: Current date
+      id: date
+      run: |
+        date=$(date +"%Y-%m-%d")
+
+        echo "Date: ${date}"
+        echo "date=${date}" >> $GITHUB_OUTPUT
+
+    - name: Convert currency
+      id: currency
+      run: |
+        million=$((${{ inputs.amount }} / 1000000))
+        amount=$(LC_ALL=en_US.UTF-8 bash -c "printf \"%'d\" ${million}")
+
+        echo "Amount: ${amount}"
+        echo "amount=${amount}" >> $GITHUB_OUTPUT
+
+    - name: Calculate total
+      id: total
+      run: |
+        total=0
+        while read -r line; do
+          if [[ $line =~ \<!--ISK:([0-9]+)--\> ]]; then
+            total=$((total + BASH_REMATCH[1]))
+          fi
+        done < /tmp/issue_body
+
+        total=$((total + ${{ inputs.amount }}))
+        total=$((total / 1000000))
+        total=$(LC_ALL=en_US.UTF-8 bash -c "printf \"%'d\" $total")
+
+        echo "Total: ${total}"
+        echo "amount=${total}" >> $GITHUB_OUTPUT
+
+    - name: Update issue body
+      id: update_issue
+      run: |
+        sed -i -r 's@<!--TOTAL-->(.*)@<!--TOTAL-->🏦 A total of ${{ steps.total.outputs.amount }}m ISK has been donated towards this ticket:@g' /tmp/issue_body
+        sed -i -r 's@<!--MARKER-->(.*)@- 💸 ${{ steps.currency.outputs.amount }}m ISK donated by [${{ inputs.character_name }}](https://evewho.com/character/${{ inputs.character_id }}) on ${{ steps.date.outputs.date }}<!--ISK:${{ inputs.amount }}-->\n<!--MARKER-->@g' /tmp/issue_body
+
+        cat /tmp/issue_body
+
+    - name: Update issue
+      run: gh issue comment ${NUMBER} --edit-last --body-file /tmp/issue_body
+      env:
+        GH_TOKEN: ${{ steps.donation_app.outputs.token }}
+        GH_REPO: ${{ github.repository }}
+        NUMBER: ${{ inputs.issue }}
